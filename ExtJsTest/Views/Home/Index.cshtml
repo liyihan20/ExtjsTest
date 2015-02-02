@@ -1,0 +1,197 @@
+﻿<script type="text/javascript">    
+    //Ext.require(['*']);
+    
+    Ext.onReady(function () {
+        
+        /*-------配合cookie实现主题切换功能--------*/
+        var themesArr = new Array(
+            { "name": "neptune", "path": "@Url.Content("~/Scripts/Extjs4.2/resources/ext-theme-neptune/ext-theme-neptune-all.css")" },
+            { "name": "access", "path": "@Url.Content("~/Scripts/Extjs4.2/resources/ext-theme-access/ext-theme-access-all.css")" },
+            { "name": "classic", "path": "@Url.Content("~/Scripts/Extjs4.2/resources/ext-theme-classic/ext-theme-classic-all.css")" },
+            { "name": "gray", "path": "@Url.Content("~/Scripts/Extjs4.2/resources/ext-theme-gray/ext-theme-gray-all.css")" }
+        );
+
+        var themeNameCookie = Ext.util.Cookies.get("theme.name");
+        var themePathCookie = Ext.util.Cookies.get("theme.path");
+        if (themeNameCookie && "neptune" != themeNameCookie) {
+            toggleTheme(themePathCookie);
+        } 
+
+        var themesStore = Ext.create('Ext.data.Store', {
+            fields: ['name', 'path'],
+            data: themesArr
+        });
+
+        var themeBox = Ext.create('Ext.form.ComboBox', {
+            fieldLabel: '主题',
+            labelWidth: 40,
+            width: 130,
+            margin:'2 10 2 0',
+            store: themesStore,
+            queryMode: 'local',
+            displayField: 'name',
+            valueField: 'path',
+            listeners: {
+                'select': function (combo, records, eOpts) {                    
+                    setThemeCookie(records[0].data.name, records[0].data.path);
+                    toggleTheme(records[0].data.path);
+                },
+                'afterrender': function () {                    
+                    if (!themePathCookie) {
+                        setThemeCookie(themesArr[0].name, themesArr[0].path);                        
+                        themeBox.setValue(themesArr[0].path);
+                    } else {
+                        themeBox.setValue(themePathCookie);
+                    }
+                }
+            }        
+
+        });
+        /*-------主题切换功能--------*/
+
+        var viewport = Ext.create('Ext.Viewport', {
+            layout: {
+                type: 'border',
+                padding: 2
+            },
+            items: [{
+                region: 'north',
+                split: false,
+                height: 30,
+                collapsible: false,
+                layout:
+                    {
+                        type: 'hbox',
+                        align: 'top'
+                    },
+                items: [
+                    {
+                        xtype: 'image',
+                        height: 27,
+                        src:'@Url.Content("~/Content/themes/base/images/truly_logo.jpg")'
+                    },
+                    {
+                        xtype: 'tbspacer',
+                        flex: 1
+                    },
+                    {
+                        xtype: 'text',
+                        text: '一般贸易管理系统',
+                        style: 'font-size:22px;font-family:微软雅黑;letter-spacing:10px'
+                    },
+                    {
+                        xtype: 'tbspacer',
+                        flex: 1
+                    },
+                    themeBox,
+                    {
+                        xtype: 'button',
+                        text: '修改密码',
+                        style: 'margin:2px 10px 2px 0px;'
+                    },
+                    {
+                        xtype: 'button',
+                        text: '退出系统',
+                        style: 'margin:2px 10px 2px 0px;'
+                    }
+                ]
+            }, {
+                region: 'west',
+                collapsible: true,
+                title: '菜单栏',
+                split: true,
+                width: 140,
+                minWidth: 120,
+                minHeight: 140,
+                layout: {
+                    type: 'vbox',
+                    align: 'center'
+                },
+                defaultType: 'button',
+                defaults: {
+                    width: '100%',
+                    margin: '10 2 0 2',
+                    height: 28,
+                    handler: btClick
+                },
+                items: [
+                    {
+                        text: 'click me',
+                        myUrl: 'Home/Main',
+                        itemId: 'Main'
+                    },
+                    {
+                        text: 'click me again',
+                        myUrl: 'Home/Main2',
+                        itemId: 'Main2'
+                    }
+                ]
+            }, {
+                region: 'center',
+                layout: 'fit',
+                items: [
+                        Ext.widget('tabpanel', {
+                            activeTab: 0,
+                            id: 'mytabs',
+                            defaults: {
+                                autoScroll: true,
+                                bodyPadding: 10,
+                                closable: true
+                            },
+                            items: [{
+                                title: '主页',
+                                closable: false,
+                                loader: {
+                                    url: 'Home/Main',
+                                    contentType: 'html',
+                                    autoLoad: true
+                                }
+                            }]
+                        })
+                ]
+            }, {
+                region: 'south',
+                collapsible: true,
+                split: false,
+                height: 80,
+                title: '登录信息',
+                html: '<span>Hello</span>'
+            }]
+        });
+
+
+    });
+
+    //菜单按钮点击处理事件
+    function btClick(el) {
+        var tabs = Ext.getCmp('mytabs');
+        var existsTab = tabs.child('#' + el.itemId);
+        if (existsTab) {
+            tabs.setActiveTab(existsTab);
+        } else {
+            tabs.add({
+                itemId: el.itemId,
+                title: el.text,
+                loader: {
+                    url: el.myUrl,
+                    contentType: 'html',
+                    autoLoad: true,
+                    loadMsk: true
+                }
+            }).show();
+        }
+    }
+
+    //设置主题cookie
+    function setThemeCookie(themeName, themePath) {
+        //参数：cookie_name,cookie_value,expire_date
+        Ext.util.Cookies.set("theme.name", themeName, new Date(2099, 11, 17, 3, 24, 0));
+        Ext.util.Cookies.set("theme.path", themePath, new Date(2099, 11, 17, 3, 24, 0));
+    }
+
+    //页面切换主题
+    function toggleTheme(themePath) {
+        Ext.util.CSS.removeStyleSheet('theme');
+        Ext.util.CSS.swapStyleSheet('theme', themePath);
+    }
+</script>
